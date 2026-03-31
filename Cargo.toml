@@ -1,0 +1,9 @@
+[package]
+name = "fjall-typed-keyspace"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+byteview = "0.10.1"
+fjall = "3.1.2"
+thiserror = "2.0.18"
