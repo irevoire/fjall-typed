@@ -2,6 +2,7 @@ use std::{borrow::Cow, convert::Infallible, marker::PhantomData, ops::RangeBound
 
 use byteview::StrView;
 use fjall::{Guard, Iter, Slice};
+pub mod codec;
 
 #[derive(Debug)]
 pub enum Error<KeyError, ValueError> {
@@ -11,7 +12,7 @@ pub enum Error<KeyError, ValueError> {
 }
 
 pub trait Encode {
-    type Item;
+    type Item: ?Sized;
     type Error;
 
     fn encode(item: &Self::Item) -> Result<Slice, Self::Error>;
