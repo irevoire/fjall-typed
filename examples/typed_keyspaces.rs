@@ -1,6 +1,6 @@
 use fjall::{Database, KeyspaceCreateOptions};
 use fjall_typed_keyspace::{
-    codec::{Str, U8},
+    codec::{FacetJson, Str, U8},
     Keyspace,
 };
 
@@ -13,6 +13,9 @@ fn main() {
         .unwrap();
     let ks = Keyspace::<U8, Str>::new(ks);
 
-    ks.insert(&42, "hello").unwrap();
+    ks.insert(&33, "hello").unwrap();
+    ks.remap_value::<FacetJson<String>>()
+        .insert(&45, &String::from("hello"))
+        .unwrap();
     // ks.insert("a", "hello").unwrap();
 }
