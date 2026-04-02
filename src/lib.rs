@@ -1,7 +1,14 @@
-use std::{borrow::Cow, convert::Infallible, marker::PhantomData, ops::RangeBounds, path::Path};
+use std::{
+    borrow::Cow,
+    convert::Infallible,
+    marker::PhantomData,
+    ops::{Bound, RangeBounds},
+    path::Path,
+};
 
 use byteview::StrView;
-use fjall::{Guard, Iter, Slice};
+use fjall::Slice;
+
 pub mod codec;
 
 #[derive(Debug)]
@@ -30,6 +37,10 @@ pub trait Decode {
 pub struct Keyspace<'a, Key, Value>(Cow<'a, fjall::Keyspace>, PhantomData<(Key, Value)>);
 
 impl<'a, Key, Value> Keyspace<'a, Key, Value> {
+    pub fn new(ks: fjall::Keyspace) -> Self {
+        Self(Cow::Owned(ks), PhantomData)
+    }
+
     pub fn remap_key<NK>(&'a self) -> Keyspace<'a, NK, Value> {
         Keyspace(Cow::Borrowed(self.0.as_ref()), PhantomData)
     }
@@ -128,56 +139,8 @@ impl<'a, Key, Value> Keyspace<'a, Key, Value> {
     #[must_use]
     #[expect(clippy::iter_without_into_iter)]
     #[inline]
-    pub fn iter(&self) -> Iter {
-        self.0.iter()
-    }
-
-    /// Returns an iterator over a range of items.
-    ///
-    /// Avoid using full or unbounded ranges as they may scan a lot of items (unless limited).
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use fjall::{Database, KeyspaceCreateOptions};
-    /// #
-    /// # let folder = tempfile::tempdir()?;
-    /// # let db = Database::builder(folder).open()?;
-    /// # let tree = db.keyspace("default", KeyspaceCreateOptions::default)?;
-    /// tree.insert("a", "abc")?;
-    /// tree.insert("f", "abc")?;
-    /// tree.insert("g", "abc")?;
-    /// assert_eq!(2, tree.range("a"..="f").count());
-    /// #
-    /// # Ok::<(), fjall::Error>(())
-    /// ```
-    #[inline]
-    pub fn range<K: AsRef<[u8]>, R: RangeBounds<K>>(&self, range: R) -> Iter {
-        self.0.range(range)
-    }
-
-    /// Returns an iterator over a prefixed set of items.
-    ///
-    /// Avoid using an empty prefix as it may scan a lot of items (unless limited).
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use fjall::{Database, KeyspaceCreateOptions};
-    /// #
-    /// # let folder = tempfile::tempdir()?;
-    /// # let db = Database::builder(folder).open()?;
-    /// # let tree = db.keyspace("default", KeyspaceCreateOptions::default)?;
-    /// tree.insert("a", "abc")?;
-    /// tree.insert("ab", "abc")?;
-    /// tree.insert("abc", "abc")?;
-    /// assert_eq!(2, tree.prefix("ab").count());
-    /// #
-    /// # Ok::<(), fjall::Error>(())
-    /// ```
-    #[inline]
-    pub fn prefix<K: AsRef<[u8]>>(&self, prefix: K) -> Iter {
-        self.0.prefix(prefix)
+    pub fn iter(&self) -> Iter<Key, Value> {
+        Iter::new(self.0.iter())
     }
 
     /// Approximates the amount of items in the keyspace.
@@ -299,8 +262,8 @@ impl<'a, Key, Value> Keyspace<'a, Key, Value> {
     /// # Ok::<(), fjall::Error>(())
     /// ```
     #[inline]
-    pub fn first_key_value(&self) -> Option<Guard> {
-        self.0.first_key_value()
+    pub fn first_key_value(&self) -> Option<Guard<Key, Value>> {
+        self.0.first_key_value().map(Guard::new)
     }
 
     /// Returns the last key-value pair in the keyspace.
@@ -324,8 +287,8 @@ impl<'a, Key, Value> Keyspace<'a, Key, Value> {
     /// # Ok::<(), fjall::Error>(())
     /// ```
     #[inline]
-    pub fn last_key_value(&self) -> Option<Guard> {
-        self.0.last_key_value()
+    pub fn last_key_value(&self) -> Option<Guard<Key, Value>> {
+        self.0.last_key_value().map(Guard::new)
     }
 
     /// Returns `true` if the underlying LSM-tree is key-value-separated.
@@ -503,5 +466,110 @@ impl<'a, Key: Encode, Value> Keyspace<'a, Key, Value> {
     pub fn size_of(&self, key: &Key::Item) -> Result<Option<u32>, Error<Key::Error, Infallible>> {
         let key = Key::encode(key).map_err(Error::Key)?;
         self.0.size_of(key).map_err(Error::Fjall)
+    }
+
+    /// Returns an iterator over a range of items.
+    ///
+    /// Avoid using full or unbounded ranges as they may scan a lot of items (unless limited).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use fjall::{Database, KeyspaceCreateOptions};
+    /// #
+    /// # let folder = tempfile::tempdir()?;
+    /// # let db = Database::builder(folder).open()?;
+    /// # let tree = db.keyspace("default", KeyspaceCreateOptions::default)?;
+    /// tree.insert("a", "abc")?;
+    /// tree.insert("f", "abc")?;
+    /// tree.insert("g", "abc")?;
+    /// assert_eq!(2, tree.range("a"..="f").count());
+    /// #
+    /// # Ok::<(), fjall::Error>(())
+    /// ```
+    #[inline]
+    pub fn range<R: RangeBounds<Key::Item>>(
+        &self,
+        range: R,
+    ) -> Result<Iter<Key, Value>, Key::Error> {
+        let start = match range.start_bound() {
+            Bound::Included(key) => Bound::Excluded(Key::encode(key)?),
+            Bound::Excluded(key) => Bound::Included(Key::encode(key)?),
+            Bound::Unbounded => Bound::Unbounded,
+        };
+        let end = match range.end_bound() {
+            Bound::Included(key) => Bound::Excluded(Key::encode(key)?),
+            Bound::Excluded(key) => Bound::Included(Key::encode(key)?),
+            Bound::Unbounded => Bound::Unbounded,
+        };
+
+        Ok(Iter::new(self.0.range((start, end))))
+    }
+
+    /// Returns an iterator over a prefixed set of items.
+    ///
+    /// Avoid using an empty prefix as it may scan a lot of items (unless limited).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use fjall::{Database, KeyspaceCreateOptions};
+    /// #
+    /// # let folder = tempfile::tempdir()?;
+    /// # let db = Database::builder(folder).open()?;
+    /// # let tree = db.keyspace("default", KeyspaceCreateOptions::default)?;
+    /// tree.insert("a", "abc")?;
+    /// tree.insert("ab", "abc")?;
+    /// tree.insert("abc", "abc")?;
+    /// assert_eq!(2, tree.prefix("ab").count());
+    /// #
+    /// # Ok::<(), fjall::Error>(())
+    /// ```
+    #[inline]
+    pub fn prefix(&self, prefix: &Key::Item) -> Result<Iter<Key, Value>, Key::Error> {
+        let prefix = Key::encode(prefix)?;
+        Ok(Iter::new(self.0.prefix(prefix)))
+    }
+}
+
+pub struct Guard<Key, Value>(fjall::Guard, PhantomData<(Key, Value)>);
+
+impl<Key, Value> Guard<Key, Value> {
+    pub fn new(guard: fjall::Guard) -> Self {
+        Self(guard, PhantomData)
+    }
+
+    pub fn remap_key_type<NKey>(self) -> Guard<NKey, Value> {
+        Guard(self.0, PhantomData)
+    }
+
+    pub fn remap_value_type<NValue>(self) -> Guard<Key, NValue> {
+        Guard(self.0, PhantomData)
+    }
+
+    pub fn remap_types<NKey, NValue>(self) -> Guard<NKey, NValue> {
+        Guard(self.0, PhantomData)
+    }
+}
+
+pub struct Iter<Key, Value>(fjall::Iter, PhantomData<(Key, Value)>);
+
+impl<Key, Value> Iter<Key, Value> {
+    pub fn new(iter: fjall::Iter) -> Self {
+        Self(iter, PhantomData)
+    }
+}
+
+impl<Key, Value> Iterator for Iter<Key, Value> {
+    type Item = Guard<Key, Value>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next().map(Guard::new)
+    }
+}
+
+impl<Key, Value> DoubleEndedIterator for Iter<Key, Value> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.0.next_back().map(Guard::new)
     }
 }
