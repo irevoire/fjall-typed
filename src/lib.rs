@@ -1,6 +1,8 @@
 use std::{
     borrow::Cow,
     convert::Infallible,
+    error::Error as StdError,
+    fmt,
     marker::PhantomData,
     ops::{Bound, RangeBounds},
     path::Path,
@@ -17,6 +19,17 @@ pub enum Error<KeyError, ValueError> {
     Key(KeyError),
     Value(ValueError),
 }
+
+impl<KeyError: StdError, ValueError: StdError> fmt::Display for Error<KeyError, ValueError> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Error::Fjall(error) => write!(f, "{error}"),
+            Error::Key(error) => write!(f, "{error}"),
+            Error::Value(error) => write!(f, "{error}"),
+        }
+    }
+}
+impl<KeyError: StdError, ValueError: StdError> StdError for Error<KeyError, ValueError> {}
 
 pub trait Encode {
     type Item: ?Sized;
