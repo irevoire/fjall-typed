@@ -33,8 +33,13 @@ pub trait Decode {
 }
 
 #[repr(transparent)]
-#[derive(Clone)]
 pub struct Keyspace<'a, Key, Value>(Cow<'a, fjall::Keyspace>, PhantomData<(Key, Value)>);
+
+impl<'a, Key, Value> Clone for Keyspace<'a, Key, Value> {
+    fn clone(&self) -> Self {
+        Self(self.0.clone(), self.1.clone())
+    }
+}
 
 impl<'a, Key, Value> Keyspace<'a, Key, Value> {
     pub fn new(ks: fjall::Keyspace) -> Self {
