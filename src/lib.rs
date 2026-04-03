@@ -20,6 +20,16 @@ pub enum Error<KeyError, ValueError> {
     Value(ValueError),
 }
 
+impl<KeyError: StdError, ValueError: StdError> Error<KeyError, ValueError> {
+    pub fn unwrap_fjall(self) -> fjall::Error {
+        match self {
+            Error::Fjall(error) => error,
+            Error::Key(_) => panic!("Unwrapped a non fjall error"),
+            Error::Value(_) => panic!("Unwrapped a non fjall error"),
+        }
+    }
+}
+
 impl<KeyError: StdError, ValueError: StdError> fmt::Display for Error<KeyError, ValueError> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
