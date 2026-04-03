@@ -1,5 +1,5 @@
 [package]
-name = "fjall-typed-keyspace"
+name = "fjall-typed"
 version = "0.1.0"
 edition = "2024"
 
