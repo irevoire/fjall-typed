@@ -2,7 +2,7 @@ use std::convert::Infallible;
 
 use fjall::Slice;
 
-use crate::{Decode, Encode};
+use crate::codec::{Decode, Encode};
 
 pub enum Bytes {}
 

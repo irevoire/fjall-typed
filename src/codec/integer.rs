@@ -1,4 +1,4 @@
-use crate::{Decode, Encode};
+use crate::codec::{Decode, Encode};
 use byteorder::{ByteOrder, ReadBytesExt};
 use fjall::Slice;
 use std::convert::Infallible;

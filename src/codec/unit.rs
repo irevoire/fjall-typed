@@ -2,7 +2,7 @@ use std::{convert::Infallible, fmt};
 
 use fjall::Slice;
 
-use crate::{Decode, Encode};
+use crate::codec::{Decode, Encode};
 use std::error::Error as StdError;
 
 pub struct Unit {}

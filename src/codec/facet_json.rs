@@ -5,7 +5,7 @@ use facet_format::SerializeError;
 use facet_json::{DeserializeError, JsonSerializeError};
 use fjall::Slice;
 
-use crate::{Decode, Encode};
+use crate::codec::{Decode, Encode};
 
 pub struct FacetJson<T>(PhantomData<T>);
 

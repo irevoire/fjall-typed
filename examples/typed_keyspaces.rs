@@ -1,5 +1,5 @@
 use fjall::{Database, KeyspaceCreateOptions};
-use fjall_typed_keyspace::{
+use fjall_typed::{
     codec::{FacetJson, Str, U8},
     Keyspace,
 };

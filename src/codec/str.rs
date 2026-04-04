@@ -2,7 +2,7 @@ use std::{convert::Infallible, string::FromUtf8Error};
 
 use fjall::Slice;
 
-use crate::{Decode, Encode};
+use crate::codec::{Decode, Encode};
 
 pub struct Str {}
 
