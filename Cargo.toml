@@ -10,7 +10,6 @@ facet = { version = "0.44", features = ["jiff02", "uuid"], optional = true }
 facet-format = { version = "0.44", optional = true }
 facet-json = { version = "0.44", optional = true }
 fjall = "3.1.2"
-thiserror = "2.0.18"
 
 [features]
 default = ["facet_json"]
