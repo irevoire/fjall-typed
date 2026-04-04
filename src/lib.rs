@@ -33,6 +33,18 @@ impl<Key, Value> Iter<Key, Value> {
     pub fn new(iter: fjall::Iter) -> Self {
         Self(iter, PhantomData)
     }
+
+    pub fn remap_key_type<NKey>(self) -> Iter<NKey, Value> {
+        Iter(self.0, PhantomData)
+    }
+
+    pub fn remap_value_type<NValue>(self) -> Iter<Key, NValue> {
+        Iter(self.0, PhantomData)
+    }
+
+    pub fn remap_types<NKey, NValue>(self) -> Iter<NKey, NValue> {
+        Iter(self.0, PhantomData)
+    }
 }
 
 impl<Key, Value> Iterator for Iter<Key, Value> {
