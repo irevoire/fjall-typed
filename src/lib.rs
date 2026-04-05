@@ -3,9 +3,11 @@ use std::marker::PhantomData;
 pub mod codec;
 mod error;
 mod keyspace;
+mod optimistic_tx_keyspace;
 
 pub use error::Error;
 pub use keyspace::Keyspace;
+pub use optimistic_tx_keyspace::OptimisticTxKeyspace;
 
 pub struct Guard<Key, Value>(fjall::Guard, PhantomData<(Key, Value)>);
 
