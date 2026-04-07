@@ -20,6 +20,10 @@ pub use facet_json::*;
 mod serde_json;
 #[cfg(feature = "serde_json")]
 pub use serde_json::*;
+#[cfg(feature = "serde_postcard")]
+mod serde_postcard;
+#[cfg(feature = "serde_postcard")]
+pub use serde_postcard::*;
 
 /// Dummy codec if you don't know yet which codec will be used
 pub enum Unspecified {}

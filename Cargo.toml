@@ -12,8 +12,10 @@ facet-json = { version = "0.44", optional = true }
 fjall = "3.1.2"
 serde = { version = "1", optional = true }
 serde_json = { version = "1", optional = true }
+postcard = { version = "1", features = ["alloc"], optional = true }
 
 [features]
-default = ["facet_json", "serde_json"]
+default = ["facet_json", "serde_json", "serde_postcard"]
 facet_json = ["facet-json", "facet-format", "facet"]
 serde_json = ["dep:serde_json", "serde"]
+serde_postcard = ["postcard", "serde"]
