@@ -12,16 +12,18 @@ facet-json = { version = "0.44", optional = true }
 facet-postcard = { version = "0.44", optional = true }
 facet-msgpack = { version = "0.44", optional = true }
 fjall = "3.1.2"
-serde = { version = "1", optional = true }
-serde_json = { version = "1", optional = true }
 postcard = { version = "1", features = ["alloc"], optional = true }
 rmp-serde = { version = "1", optional = true }
+roaring = { version = "0.11", optional = true }
+serde = { version = "1", optional = true }
+serde_json = { version = "1", optional = true }
 
 [features]
-default = ["facet_json", "facet_postcard", "facet_msgpack", "serde_json", "serde_postcard"]
+default = ["facet_json", "facet_postcard", "facet_msgpack", "serde_json", "serde_postcard", "roaring"]
 facet_json = ["facet-json", "facet-format", "facet"]
 facet_postcard = ["facet-postcard", "facet-format", "facet"]
 facet_msgpack = ["facet-msgpack", "facet-format", "facet"]
 serde_json = ["dep:serde_json", "serde"]
 serde_postcard = ["postcard", "serde"]
 serde_msgpack = ["rmp-serde", "serde"]
+roaring = ["dep:roaring"]

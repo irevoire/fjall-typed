@@ -12,6 +12,7 @@ mod str;
 pub use str::*;
 mod unit;
 pub use unit::*;
+
 #[cfg(feature = "facet_json")]
 mod facet_json;
 #[cfg(feature = "facet_json")]
@@ -36,6 +37,10 @@ pub use serde_postcard::*;
 mod serde_msgpack;
 #[cfg(feature = "serde_msgpack")]
 pub use serde_msgpack::*;
+#[cfg(feature = "roaring")]
+mod roaring;
+#[cfg(feature = "roaring")]
+pub use roaring::*;
 
 /// Dummy codec if you don't know yet which codec will be used
 pub enum Unspecified {}
