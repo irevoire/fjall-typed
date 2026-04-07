@@ -306,6 +306,8 @@ dependencies = [
  "facet-format",
  "facet-json",
  "fjall",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

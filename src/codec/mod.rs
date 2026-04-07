@@ -12,6 +12,10 @@ pub use unit::*;
 mod facet_json;
 #[cfg(feature = "facet_json")]
 pub use facet_json::*;
+#[cfg(feature = "serde_json")]
+mod serde_json;
+#[cfg(feature = "serde_json")]
+pub use serde_json::*;
 
 /// Dummy codec if you don't know yet which codec will be used
 pub enum Unspecified {}
