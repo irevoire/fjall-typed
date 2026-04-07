@@ -16,6 +16,10 @@ pub use unit::*;
 mod facet_json;
 #[cfg(feature = "facet_json")]
 pub use facet_json::*;
+#[cfg(feature = "facet_postcard")]
+mod facet_postcard;
+#[cfg(feature = "facet_postcard")]
+pub use facet_postcard::*;
 #[cfg(feature = "serde_json")]
 mod serde_json;
 #[cfg(feature = "serde_json")]

@@ -9,13 +9,15 @@ byteview = "0.10.1"
 facet = { version = "0.44", features = ["jiff02", "uuid"], optional = true }
 facet-format = { version = "0.44", optional = true }
 facet-json = { version = "0.44", optional = true }
+facet-postcard = { version = "0.44", optional = true }
 fjall = "3.1.2"
 serde = { version = "1", optional = true }
 serde_json = { version = "1", optional = true }
 postcard = { version = "1", features = ["alloc"], optional = true }
 
 [features]
-default = ["facet_json", "serde_json", "serde_postcard"]
+default = ["facet_json", "facet_postcard", "serde_json", "serde_postcard"]
 facet_json = ["facet-json", "facet-format", "facet"]
+facet_postcard = ["facet-postcard", "facet-format", "facet"]
 serde_json = ["dep:serde_json", "serde"]
 serde_postcard = ["postcard", "serde"]
