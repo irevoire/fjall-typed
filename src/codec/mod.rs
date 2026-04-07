@@ -32,6 +32,10 @@ pub use serde_json::*;
 mod serde_postcard;
 #[cfg(feature = "serde_postcard")]
 pub use serde_postcard::*;
+#[cfg(feature = "serde_msgpack")]
+mod serde_msgpack;
+#[cfg(feature = "serde_msgpack")]
+pub use serde_msgpack::*;
 
 /// Dummy codec if you don't know yet which codec will be used
 pub enum Unspecified {}
