@@ -5,6 +5,7 @@ use fjall::Slice;
 use crate::codec::{Decode, Encode};
 use std::error::Error as StdError;
 
+/// Describe the unit type. Fail to decode if the bytes contains anything. See [`super::DecodeIgnore`] for that purpose.
 pub struct Unit {}
 
 impl Encode for Unit {

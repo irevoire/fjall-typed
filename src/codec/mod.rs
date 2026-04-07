@@ -45,17 +45,25 @@ pub use roaring::*;
 /// Dummy codec if you don't know yet which codec will be used
 pub enum Unspecified {}
 
+/// Define how to encode an object to the bytes that will be stored in fjall.
 pub trait Encode {
+    /// The type to encode.
     type Item: ?Sized;
+    /// The error returned if the type can't be encoded. Uses [`std::convert::Infallible`] if the encoding can't fail
     type Error;
 
+    /// Encode the given item as bytes.
     fn encode(item: &Self::Item) -> Result<Slice, Self::Error>;
 }
 
+/// Define how to decode an object from the bytes stored in fjall to your type.
 pub trait Decode {
+    /// The type to decode.
     type Item;
+    /// The error returned if the type can't be decoded. Uses [`std::convert::Infallible`] if the decoding can't fail
     type Error;
 
+    /// Decode the given bytes as your item.
     fn decode(bytes: Slice) -> Result<Self::Item, Self::Error>;
 }
 

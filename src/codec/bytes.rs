@@ -4,6 +4,7 @@ use fjall::Slice;
 
 use crate::codec::{Decode, Encode};
 
+/// Describes a byte slice `[u8]` that is totally borrowed and doesn't depend on any memory alignment.
 pub enum Bytes {}
 
 impl Encode for Bytes {

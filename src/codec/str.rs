@@ -4,6 +4,7 @@ use fjall::Slice;
 
 use crate::codec::{Decode, Encode};
 
+/// Describe a raw string without len or termination byte.
 pub struct Str {}
 
 impl Encode for Str {
