@@ -4,6 +4,8 @@ use fjall::Slice;
 
 mod bytes;
 pub use bytes::*;
+mod lazy;
+pub use lazy::*;
 mod integer;
 pub use integer::*;
 mod str;
