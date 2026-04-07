@@ -1,3 +1,5 @@
+use std::convert::Infallible;
+
 use fjall::Slice;
 
 mod bytes;
@@ -32,4 +34,18 @@ pub trait Decode {
     type Error;
 
     fn decode(bytes: Slice) -> Result<Self::Item, Self::Error>;
+}
+
+/// Convenient struct to ignore the decoding part and return the unit type instead.
+/// Can be useful when working with [`crate::Guard`], but keep in mind that it still does a useless allocation.
+/// Ideally, you should use the [`crate::Keyspace::contains_key`] or [`crate::Keyspace::size_of`] methods instead.
+pub enum DecodeIgnore {}
+
+impl Decode for DecodeIgnore {
+    type Item = ();
+    type Error = Infallible;
+
+    fn decode(_: Slice) -> Result<Self::Item, Self::Error> {
+        Ok(())
+    }
 }

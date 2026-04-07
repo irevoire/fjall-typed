@@ -7,6 +7,7 @@ use fjall::Slice;
 
 use crate::codec::{Decode, Encode};
 
+/// Encode a struct as json through the [`facet::Facet`] trait.
 pub struct FacetJson<T>(PhantomData<T>);
 
 impl<T: Facet<'static>> Encode for FacetJson<T> {

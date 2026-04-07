@@ -4,6 +4,7 @@ use fjall::Slice;
 use std::convert::Infallible;
 use std::marker::PhantomData;
 
+/// Encodable version of [`u8`].
 pub enum U8 {}
 
 impl Encode for U8 {
@@ -24,6 +25,7 @@ impl Decode for U8 {
     }
 }
 
+/// Encodable version of [`i8`].
 pub enum I8 {}
 
 impl Encode for I8 {
