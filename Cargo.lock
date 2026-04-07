@@ -278,6 +278,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "facet-msgpack"
+version = "0.44.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7d5fc25b46847036de9db7f78d4f37d05b5dfe61513e311024d971b90f97fa0c"
+dependencies = [
+ "facet-core",
+ "facet-format",
+ "facet-reflect",
+]
+
+[[package]]
 name = "facet-path"
 version = "0.44.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -367,6 +378,7 @@ dependencies = [
  "facet",
  "facet-format",
  "facet-json",
+ "facet-msgpack",
  "facet-postcard",
  "fjall",
  "postcard",

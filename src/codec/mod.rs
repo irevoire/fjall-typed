@@ -20,6 +20,10 @@ pub use facet_json::*;
 mod facet_postcard;
 #[cfg(feature = "facet_postcard")]
 pub use facet_postcard::*;
+#[cfg(feature = "facet_msgpack")]
+mod facet_msgpack;
+#[cfg(feature = "facet_msgpack")]
+pub use facet_msgpack::*;
 #[cfg(feature = "serde_json")]
 mod serde_json;
 #[cfg(feature = "serde_json")]
