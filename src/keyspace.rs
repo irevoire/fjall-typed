@@ -55,6 +55,12 @@ impl<'a, Key, Value> Keyspace<'a, Key, Value> {
         Self(Cow::Owned(ks), PhantomData)
     }
 
+    /// Clone the inner `Arc` to decorelate this keyspace from the one it's been derived from.
+    /// Can be useful if you're storing a keyspace after remapping one of its type.
+    pub fn to_owned(self) -> Keyspace<'static, Key, Value> {
+        Keyspace::new(self.0.into_owned())
+    }
+
     /// Change the codec of the key.
     /// If you want to store this new keyspace, call [`Self::to_owned()`].
     ///
