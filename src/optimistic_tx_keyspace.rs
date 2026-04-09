@@ -7,6 +7,21 @@ use crate::{
     Error, Guard,
 };
 
+/// Typed optimistic tx keyspace. See [`fjall::OptimisticTxKeyspace`] for more informations on what is a keyspace.
+/// Contrarily to the original fjall::OptimisticTxKeyspace, this one is typed.
+/// You must specify a codec for the key and value.
+/// ```no_run
+/// # let db: fjall::OptimisticTxDatabase = todo!();
+/// use fjall_typed::OptimisticTxKeyspace;
+/// use fjall_typed::codec::{U8, Str};
+///
+/// let ks = db
+///   .keyspace("my_items", fjall::KeyspaceCreateOptions::default)
+///   .unwrap();
+/// // Here we wrap the original keyspace into a fjall_typed keyspace.
+/// // This one indicates that it maps `u8` with strings.
+/// let ks = OptimisticTxKeyspace::<U8, Str>::new(ks);
+/// ```
 #[repr(transparent)]
 pub struct OptimisticTxKeyspace<'a, Key, Value>(
     Cow<'a, fjall::OptimisticTxKeyspace>,
@@ -20,113 +35,102 @@ impl<'a, Key, Value> Clone for OptimisticTxKeyspace<'a, Key, Value> {
 }
 
 impl<'a, Key, Value> OptimisticTxKeyspace<'a, Key, Value> {
+    /// Create a typed keyspace from a [`fjall::OptimisticTxDatabase`].
+    /// ```no_run
+    /// # let db: fjall::OptimisticTxDatabase = todo!();
+    /// use fjall_typed::OptimisticTxKeyspace;
+    /// use fjall_typed::codec::{U8, Str};
+    ///
+    /// let ks = db
+    ///   .keyspace("my_items", fjall::KeyspaceCreateOptions::default)
+    ///   .unwrap();
+    /// // Here we wrap the original keyspace into a fjall_typed keyspace.
+    /// // This one indicates that it maps `u8` with strings.
+    /// let ks = OptimisticTxKeyspace::<U8, Str>::new(ks);
+    /// ```
+    #[must_use]
+    #[inline]
     pub fn new(ks: fjall::OptimisticTxKeyspace) -> Self {
         Self(Cow::Owned(ks), PhantomData)
     }
 
+    /// Clone the inner `Arc` to decorelate this keyspace from the one it's been derived from.
+    /// Can be useful if you're storing a keyspace after remapping one of its type.
+    pub fn to_owned(self) -> OptimisticTxKeyspace<'static, Key, Value> {
+        OptimisticTxKeyspace::new(self.0.into_owned())
+    }
+
+    /// Change the codec of the key.
+    /// If you want to store this new keyspace, call [`Self::to_owned()`].
+    ///
+    /// ```no_run
+    /// # let ks = todo!();
+    /// use fjall_typed::OptimisticTxKeyspace;
+    /// use fjall_typed::codec::{U8, Str, I8};
+    ///
+    /// let ks = OptimisticTxKeyspace::<U8, Str>::new(ks);
+    /// let ks = ks.remap_key::<I8>();
+    /// let s: String = ks.get(&-2).unwrap().unwrap();
+    /// ```
+    #[must_use]
+    #[inline]
     pub fn remap_key<NK>(&'a self) -> OptimisticTxKeyspace<'a, NK, Value> {
         OptimisticTxKeyspace(Cow::Borrowed(self.0.as_ref()), PhantomData)
     }
 
+    /// Change the codec of the value.
+    /// If you want to store this new keyspace, call [`Self::to_owned()`].
+    ///
+    /// ```no_run
+    /// # let ks = todo!();
+    /// use fjall_typed::OptimisticTxKeyspace;
+    /// use fjall_typed::codec::{U8, Str, Unit};
+    ///
+    /// let ks = OptimisticTxKeyspace::<U8, Str>::new(ks);
+    /// let ks = ks.remap_value::<Unit>();
+    /// let s: () = ks.get(&2).unwrap().unwrap();
+    /// ```
+    #[must_use]
+    #[inline]
     pub fn remap_value<NV>(&'a self) -> OptimisticTxKeyspace<'a, Key, NV> {
         OptimisticTxKeyspace(Cow::Borrowed(self.0.as_ref()), PhantomData)
     }
 
+    /// Change the codec of the key and value.
+    /// If you want to store this new keyspace, call [`Self::to_owned()`].
+    ///
+    /// ```no_run
+    /// # let ks = todo!();
+    /// use fjall_typed::OptimisticTxKeyspace;
+    /// use fjall_typed::codec::{U8, Str, I8, Unit};
+    ///
+    /// let ks = OptimisticTxKeyspace::<U8, Str>::new(ks);
+    /// let ks = ks.remap_key_value::<I8, Unit>();
+    /// let s: () = ks.get(&-2).unwrap().unwrap();
+    /// ```
+    #[must_use]
+    #[inline]
     pub fn remap_key_value<NK, NV>(&'a self) -> OptimisticTxKeyspace<'a, NK, NV> {
         OptimisticTxKeyspace(Cow::Borrowed(self.0.as_ref()), PhantomData)
     }
 
-    /// Returns the underlying LSM-tree's path.
+    /// This function has the same semantics of [`fjall::OptimisticTxKeyspace::path`].
     #[must_use]
+    #[inline]
     pub fn path(&self) -> PathBuf {
         self.0.path()
     }
 
-    /// Approximates the amount of items in the keyspace.
-    ///
-    /// For update- or delete-heavy workloads, this value will
-    /// diverge from the real value, but is a O(1) operation.
-    ///
-    /// For insert-only workloads (e.g. logs, time series)
-    /// this value is reliable.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use fjall::{OptimisticTxDatabase, KeyspaceCreateOptions, Readable};
-    /// #
-    /// # let folder = tempfile::tempdir()?;
-    /// # let db = OptimisticTxDatabase::builder(folder).open()?;
-    /// # let tree = db.keyspace("default", KeyspaceCreateOptions::default)?;
-    /// assert_eq!(tree.approximate_len(), 0);
-    ///
-    /// tree.insert("1", "abc")?;
-    /// assert_eq!(tree.approximate_len(), 1);
-    ///
-    /// tree.remove("1")?;
-    /// // Oops! approximate_len will not be reliable here
-    /// assert_eq!(tree.approximate_len(), 2);
-    /// #
-    /// # Ok::<(), fjall::Error>(())
-    /// ```
+    /// This function has the same semantics of [`fjall::OptimisticTxKeyspace::approximate_len`].
     #[must_use]
+    #[inline]
     pub fn approximate_len(&self) -> usize {
         self.0.approximate_len()
     }
 
-    /// Atomically updates an item and returns the previous value.
-    ///
-    /// Returning `None` removes the item if it existed before.
-    ///
-    /// The operation will run wrapped in a transaction.
-    ///
-    /// # Note
-    ///
-    /// The provided closure can be called multiple times as this function
-    /// automatically retries on conflict. Since this is an `FnMut`, make sure
-    /// it is idempotent and will not cause side-effects.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use fjall::{OptimisticTxDatabase, Slice, KeyspaceCreateOptions};
-    /// # use std::sync::Arc;
-    /// #
-    /// # let folder = tempfile::tempdir()?;
-    /// # let db = OptimisticTxDatabase::builder(folder).open()?;
-    /// # let tree = db.keyspace("default", KeyspaceCreateOptions::default)?;
-    /// tree.insert("a", "abc")?;
-    ///
-    /// let prev = tree.fetch_update("a", |_| Some(Slice::from(*b"def")))?.unwrap();
-    /// assert_eq!(b"abc", &*prev);
-    ///
-    /// let item = tree.get("a")?;
-    /// assert_eq!(Some("def".as_bytes().into()), item);
-    /// #
-    /// # Ok::<(), fjall::Error>(())
-    /// ```
-    ///
-    /// ```
-    /// # use fjall::{OptimisticTxDatabase, KeyspaceCreateOptions, Readable};
-    /// # use std::sync::Arc;
-    /// #
-    /// # let folder = tempfile::tempdir()?;
-    /// # let db = OptimisticTxDatabase::builder(folder).open()?;
-    /// # let tree = db.keyspace("default", KeyspaceCreateOptions::default)?;
-    /// tree.insert("a", "abc")?;
-    ///
-    /// let prev = tree.fetch_update("a", |_| None)?.unwrap();
-    /// assert_eq!(b"abc", &*prev);
-    ///
-    /// let item = tree.get("a")?;
-    /// assert!(item.is_none());
-    /// #
-    /// # Ok::<(), fjall::Error>(())
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// Will return `Err` if an IO error occurs.
+    /// This function has the same semantics of [`fjall::OptimisticTxKeyspace::fetch_update`].
+    #[must_use]
+    #[inline]
     pub fn fetch_update<K: Into<UserKey>, F: FnMut(Option<&UserValue>) -> Option<UserValue>>(
         &self,
         key: K,
@@ -135,59 +139,9 @@ impl<'a, Key, Value> OptimisticTxKeyspace<'a, Key, Value> {
         self.0.fetch_update(key, f)
     }
 
-    /// Atomically updates an item and returns the new value.
-    ///
-    /// Returning `None` removes the item if it existed before.
-    ///
-    /// The operation will run wrapped in a transaction.
-    ///
-    /// # Note
-    ///
-    /// The provided closure can be called multiple times as this function
-    /// automatically retries on conflict. Since this is an `FnMut`, make sure
-    /// it is idempotent and will not cause side-effects.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use fjall::{OptimisticTxDatabase, Slice, KeyspaceCreateOptions};
-    /// # use std::sync::Arc;
-    /// #
-    /// # let folder = tempfile::tempdir()?;
-    /// # let db = OptimisticTxDatabase::builder(folder).open()?;
-    /// # let tree = db.keyspace("default", KeyspaceCreateOptions::default)?;
-    /// tree.insert("a", "abc")?;
-    ///
-    /// let updated = tree.update_fetch("a", |_| Some(Slice::from(*b"def")))?.unwrap();
-    /// assert_eq!(b"def", &*updated);
-    ///
-    /// let item = tree.get("a")?;
-    /// assert_eq!(Some("def".as_bytes().into()), item);
-    /// #
-    /// # Ok::<(), fjall::Error>(())
-    /// ```
-    ///
-    /// ```
-    /// # use fjall::{OptimisticTxDatabase, KeyspaceCreateOptions, Readable};
-    /// # use std::sync::Arc;
-    /// #
-    /// # let folder = tempfile::tempdir()?;
-    /// # let db = OptimisticTxDatabase::builder(folder).open()?;
-    /// # let tree = db.keyspace("default", KeyspaceCreateOptions::default)?;
-    /// tree.insert("a", "abc")?;
-    ///
-    /// let updated = tree.update_fetch("a", |_| None)?;
-    /// assert!(updated.is_none());
-    ///
-    /// let item = tree.get("a")?;
-    /// assert!(item.is_none());
-    /// #
-    /// # Ok::<(), fjall::Error>(())
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// Will return `Err` if an IO error occurs.
+    /// This function has the same semantics of [`fjall::OptimisticTxKeyspace::update_fetch`].
+    #[must_use]
+    #[inline]
     pub fn update_fetch<K: Into<UserKey>, F: FnMut(Option<&UserValue>) -> Option<UserValue>>(
         &self,
         key: K,
@@ -198,33 +152,9 @@ impl<'a, Key, Value> OptimisticTxKeyspace<'a, Key, Value> {
 }
 
 impl<'a, Key: Encode, Value: Encode> OptimisticTxKeyspace<'a, Key, Value> {
-    /// Inserts a key-value pair into the keyspace.
-    ///
-    /// Keys may be up to 65536 bytes long, values up to 2^32 bytes.
-    /// Shorter keys and values result in better performance.
-    ///
-    /// If the key already exists, the item will be overwritten.
-    ///
-    /// The operation will run wrapped in a transaction.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use fjall::{OptimisticTxDatabase, KeyspaceCreateOptions, Readable};
-    /// #
-    /// # let folder = tempfile::tempdir()?;
-    /// # let db = OptimisticTxDatabase::builder(folder).open()?;
-    /// # let tree = db.keyspace("default", KeyspaceCreateOptions::default)?;
-    /// tree.insert("a", "abc")?;
-    ///
-    /// assert!(!db.read_tx().is_empty(&tree)?);
-    /// #
-    /// # Ok::<(), fjall::Error>(())
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// Will return `Err` if an IO error occurs.
+    /// This function has the same semantics of [`fjall::OptimisticTxKeyspace::insert`].
+    #[must_use]
+    #[inline]
     pub fn insert(
         &self,
         key: &Key::Item,
@@ -238,89 +168,25 @@ impl<'a, Key: Encode, Value: Encode> OptimisticTxKeyspace<'a, Key, Value> {
 }
 
 impl<'a, Key: Encode, Value> OptimisticTxKeyspace<'a, Key, Value> {
-    /// Returns `true` if the keyspace contains the specified key.
-    ///
-    /// The operation will run wrapped in a read snapshot.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use fjall::{OptimisticTxDatabase, KeyspaceCreateOptions, Readable};
-    /// #
-    /// # let folder = tempfile::tempdir()?;
-    /// # let db = OptimisticTxDatabase::builder(folder).open()?;
-    /// # let tree = db.keyspace("default", KeyspaceCreateOptions::default)?;
-    /// tree.insert("a", "my_value")?;
-    ///
-    /// assert!(tree.contains_key("a")?);
-    /// assert!(!tree.contains_key("b")?);
-    /// #
-    /// # Ok::<(), fjall::Error>(())
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// Will return `Err` if an IO error occurs.
+    /// This function has the same semantics of [`fjall::OptimisticTxKeyspace::contains_key`].
+    #[must_use]
+    #[inline]
     pub fn contains_key(&self, key: &Key::Item) -> Result<bool, Error<Key::Error, Infallible>> {
         let key = Key::encode(key).map_err(Error::Key)?;
         self.0.contains_key(key).map_err(Error::Fjall)
     }
 
-    /// Retrieves the size of an item from the keyspace.
-    ///
-    /// The operation will run wrapped in a read snapshot.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use fjall::{OptimisticTxDatabase, KeyspaceCreateOptions, Readable};
-    /// #
-    /// # let folder = tempfile::tempdir()?;
-    /// # let db = OptimisticTxDatabase::builder(folder).open()?;
-    /// # let tree = db.keyspace("default", KeyspaceCreateOptions::default)?;
-    /// tree.insert("a", "my_value")?;
-    ///
-    /// let len = tree.size_of("a")?.unwrap_or_default();
-    /// assert_eq!("my_value".len() as u32, len);
-    /// #
-    /// # Ok::<(), fjall::Error>(())
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// Will return `Err` if an IO error occurs.
+    /// This function has the same semantics of [`fjall::OptimisticTxKeyspace::size_of`].
+    #[must_use]
+    #[inline]
     pub fn size_of(&self, key: &Key::Item) -> Result<Option<u32>, Error<Key::Error, Infallible>> {
         let key = Key::encode(key).map_err(Error::Key)?;
         self.0.size_of(key).map_err(Error::Fjall)
     }
 
-    /// Removes an item from the keyspace.
-    ///
-    /// The key may be up to 65536 bytes long.
-    /// Shorter keys result in better performance.
-    ///
-    /// The operation will run wrapped in a transaction.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use fjall::{OptimisticTxDatabase, KeyspaceCreateOptions, Readable};
-    /// #
-    /// # let folder = tempfile::tempdir()?;
-    /// # let db = OptimisticTxDatabase::builder(folder).open()?;
-    /// # let tree = db.keyspace("default", KeyspaceCreateOptions::default)?;
-    /// tree.insert("a", "abc")?;
-    /// assert!(!db.read_tx().is_empty(&tree)?);
-    ///
-    /// tree.remove("a")?;
-    /// assert!(db.read_tx().is_empty(&tree)?);
-    /// #
-    /// # Ok::<(), fjall::Error>(())
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// Will return `Err` if an IO error occurs.
+    /// This function has the same semantics of [`fjall::OptimisticTxKeyspace::remove`].
+    #[must_use]
+    #[inline]
     pub fn remove(&self, key: &Key::Item) -> Result<(), Error<Key::Error, Infallible>> {
         let key = Key::encode(key).map_err(Error::Key)?;
         self.0.remove(key).map_err(Error::Fjall)
@@ -328,81 +194,25 @@ impl<'a, Key: Encode, Value> OptimisticTxKeyspace<'a, Key, Value> {
 }
 
 impl<'a, Key, Value: Decode> OptimisticTxKeyspace<'a, Key, Value> {
-    /// Returns the first key-value pair in the keyspace.
-    /// The key in this pair is the minimum key in the keyspace.
-    ///
-    /// The operation will run wrapped in a read snapshot.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use fjall::{OptimisticTxDatabase, KeyspaceCreateOptions, Readable};
-    /// #
-    /// # let folder = tempfile::tempdir()?;
-    /// # let db = OptimisticTxDatabase::builder(folder).open()?;
-    /// # let tree = db.keyspace("default", KeyspaceCreateOptions::default)?;
-    /// tree.insert("a", "my_value")?;
-    /// tree.insert("b", "my_value")?;
-    ///
-    /// assert_eq!(b"a", &*tree.first_key_value().unwrap().key()?);
-    /// #
-    /// # Ok::<(), fjall::Error>(())
-    /// ```
+    /// This function has the same semantics of [`fjall::OptimisticTxKeyspace::first_key_value`].
     #[must_use]
+    #[inline]
     pub fn first_key_value(&self) -> Option<Guard<Key, Value>> {
         self.0.first_key_value().map(Guard::new)
     }
 
-    /// Returns the last key-value pair in the keyspace.
-    /// The key in this pair is the maximum key in the keyspace.
-    ///
-    /// The operation will run wrapped in a read snapshot.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use fjall::{OptimisticTxDatabase, KeyspaceCreateOptions, Readable};
-    /// #
-    /// # let folder = tempfile::tempdir()?;
-    /// # let db = OptimisticTxDatabase::builder(folder).open()?;
-    /// # let tree = db.keyspace("default", KeyspaceCreateOptions::default)?;
-    /// tree.insert("a", "my_value")?;
-    /// tree.insert("b", "my_value")?;
-    ///
-    /// assert_eq!(b"b", &*tree.last_key_value().unwrap().key()?);
-    /// #
-    /// # Ok::<(), fjall::Error>(())
-    /// ```
+    /// This function has the same semantics of [`fjall::OptimisticTxKeyspace::last_key_value`].
     #[must_use]
+    #[inline]
     pub fn last_key_value(&self) -> Option<Guard<Key, Value>> {
         self.0.last_key_value().map(Guard::new)
     }
 }
 
 impl<'a, Key: Encode, Value: Decode> OptimisticTxKeyspace<'a, Key, Value> {
-    /// Retrieves an item from the keyspace.
-    ///
-    /// The operation will run wrapped in a read snapshot.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use fjall::{OptimisticTxDatabase, KeyspaceCreateOptions, Readable};
-    /// #
-    /// # let folder = tempfile::tempdir()?;
-    /// # let db = OptimisticTxDatabase::builder(folder).open()?;
-    /// # let tree = db.keyspace("default", KeyspaceCreateOptions::default)?;
-    /// tree.insert("a", "my_value")?;
-    ///
-    /// let item = tree.get("a")?;
-    /// assert_eq!(Some("my_value".as_bytes().into()), item);
-    /// #
-    /// # Ok::<(), fjall::Error>(())
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// Will return `Err` if an IO error occurs.
+    /// This function has the same semantics of [`fjall::OptimisticTxKeyspace::get`].
+    #[must_use]
+    #[inline]
     pub fn get(
         &self,
         key: &Key::Item,
@@ -414,31 +224,9 @@ impl<'a, Key: Encode, Value: Decode> OptimisticTxKeyspace<'a, Key, Value> {
         }
     }
 
-    /// Removes an item and returns its value if it existed.
-    ///
-    /// The operation will run wrapped in a transaction.
-    ///
-    /// ```
-    /// # use fjall::{OptimisticTxDatabase, KeyspaceCreateOptions, Readable};
-    /// # use std::sync::Arc;
-    /// #
-    /// # let folder = tempfile::tempdir()?;
-    /// # let db = OptimisticTxDatabase::builder(folder).open()?;
-    /// # let tree = db.keyspace("default", KeyspaceCreateOptions::default)?;
-    /// tree.insert("a", "abc")?;
-    ///
-    /// let taken = tree.take("a")?.unwrap();
-    /// assert_eq!(b"abc", &*taken);
-    ///
-    /// let item = tree.get("a")?;
-    /// assert!(item.is_none());
-    /// #
-    /// # Ok::<(), fjall::Error>(())
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// Will return `Err` if an IO error occurs.
+    /// This function has the same semantics of [`fjall::OptimisticTxKeyspace::take`].
+    #[must_use]
+    #[inline]
     pub fn take(
         &self,
         key: &Key::Item,
