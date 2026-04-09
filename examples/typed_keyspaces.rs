@@ -1,6 +1,6 @@
 use fjall::{Database, KeyspaceCreateOptions};
 use fjall_typed::{
-    codec::{FacetJson, Str, U8},
+    codec::{FacetJson, Str, U128, U8},
     Keyspace,
 };
 
@@ -21,6 +21,11 @@ fn main() {
     // You can also remap the value or key.
     ks.remap_value::<FacetJson<String>>()
         .insert(&45, &String::from("hello"))
+        .unwrap();
+
+    // When using a number larger than 1 bytes, you have to define in which order the bytes will be layed down via the `byteorder` crate.
+    ks.remap_value::<U128<byteorder::BigEndian>>()
+        .insert(&u128::MAX, &String::from("hello"))
         .unwrap();
 
     // This wouldn't work as "a" is not a `u8`.
