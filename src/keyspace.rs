@@ -17,7 +17,7 @@ use crate::{
 /// Contrarily to the original fjall::Keyspace, this one is typed.
 /// You must specify a codec for the key and value.
 /// ```no_run
-/// # let db: fjall::Keyspace = todo!();
+/// # let db: fjall::Database = todo!();
 /// use fjall_typed::Keyspace;
 /// use fjall_typed::codec::{U8, Str};
 ///
@@ -40,7 +40,7 @@ impl<'a, Key, Value> Clone for Keyspace<'a, Key, Value> {
 impl<'a, Key, Value> Keyspace<'a, Key, Value> {
     /// Create a typed keyspace from a fjall::Keyspace.
     /// ```no_run
-    /// # let db: fjall::Keyspace = todo!();
+    /// # let db: fjall::Database = todo!();
     /// use fjall_typed::Keyspace;
     /// use fjall_typed::codec::{U8, Str};
     ///
@@ -67,7 +67,7 @@ impl<'a, Key, Value> Keyspace<'a, Key, Value> {
     /// ```no_run
     /// # let ks = todo!();
     /// use fjall_typed::Keyspace;
-    /// use fjall_typed::{U8, Str, I8};
+    /// use fjall_typed::codec::{U8, Str, I8};
     ///
     /// let ks = Keyspace::<U8, Str>::new(ks);
     /// let ks = ks.remap_key::<I8>();
@@ -83,7 +83,7 @@ impl<'a, Key, Value> Keyspace<'a, Key, Value> {
     /// ```no_run
     /// # let ks = todo!();
     /// use fjall_typed::Keyspace;
-    /// use fjall_typed::{U8, Str, Unit};
+    /// use fjall_typed::codec::{U8, Str, Unit};
     ///
     /// let ks = Keyspace::<U8, Str>::new(ks);
     /// let ks = ks.remap_value::<Unit>();
@@ -99,7 +99,7 @@ impl<'a, Key, Value> Keyspace<'a, Key, Value> {
     /// ```no_run
     /// # let ks = todo!();
     /// use fjall_typed::Keyspace;
-    /// use fjall_typed::{U8, Str, I8, Unit};
+    /// use fjall_typed::codec::{U8, Str, I8, Unit};
     ///
     /// let ks = Keyspace::<U8, Str>::new(ks);
     /// let ks = ks.remap_key_value::<I8, Unit>();
