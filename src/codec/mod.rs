@@ -41,6 +41,10 @@ pub use serde_msgpack::*;
 mod roaring;
 #[cfg(feature = "roaring")]
 pub use roaring::*;
+#[cfg(feature = "rkyv")]
+mod rkyv;
+#[cfg(feature = "rkyv")]
+pub use rkyv::*;
 
 /// Dummy codec if you don't know yet which codec will be used
 pub enum Unspecified {}

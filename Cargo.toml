@@ -17,6 +17,7 @@ rmp-serde = { version = "1", optional = true }
 roaring = { version = "0.11", optional = true }
 serde = { version = "1", optional = true }
 serde_json = { version = "1", optional = true }
+rkyv = { version = "0.8.15", optional = true }
 
 [features]
 default = []
@@ -27,6 +28,7 @@ serde_json = ["dep:serde_json", "serde"]
 serde_postcard = ["postcard", "serde"]
 serde_msgpack = ["rmp-serde", "serde"]
 roaring = ["dep:roaring"]
+rkyv = ["dep:rkyv"]
 
 [[example]]
 name = "typed_keyspaces"
