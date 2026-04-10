@@ -24,7 +24,7 @@ fn main() {
         .unwrap();
 
     // When using a number larger than 1 bytes, you have to define in which order the bytes will be layed down via the `byteorder` crate.
-    ks.remap_value::<U128<byteorder::BigEndian>>()
+    ks.remap_key::<U128<byteorder::BigEndian>>()
         .insert(&u128::MAX, &String::from("hello"))
         .unwrap();
 
