@@ -1,6 +1,4 @@
-use std::{borrow::Cow, convert::Infallible, marker::PhantomData, path::PathBuf};
-
-use fjall::{Slice, UserKey, UserValue};
+use std::{borrow::Cow, convert::Infallible, marker::PhantomData, ops::Deref};
 
 use crate::{
     codec::{Decode, Encode},
@@ -31,6 +29,14 @@ pub struct OptimisticTxKeyspace<'a, Key, Value>(
 impl<'a, Key, Value> Clone for OptimisticTxKeyspace<'a, Key, Value> {
     fn clone(&self) -> Self {
         Self(self.0.clone(), self.1.clone())
+    }
+}
+
+impl<'a, Key, Value> Deref for OptimisticTxKeyspace<'a, Key, Value> {
+    type Target = fjall::OptimisticTxKeyspace;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
@@ -112,42 +118,6 @@ impl<'a, Key, Value> OptimisticTxKeyspace<'a, Key, Value> {
     #[inline]
     pub fn remap_key_value<NK, NV>(&'a self) -> OptimisticTxKeyspace<'a, NK, NV> {
         OptimisticTxKeyspace(Cow::Borrowed(self.0.as_ref()), PhantomData)
-    }
-
-    /// This function has the same semantics of [`fjall::OptimisticTxKeyspace::path`].
-    #[must_use]
-    #[inline]
-    pub fn path(&self) -> PathBuf {
-        self.0.path()
-    }
-
-    /// This function has the same semantics of [`fjall::OptimisticTxKeyspace::approximate_len`].
-    #[must_use]
-    #[inline]
-    pub fn approximate_len(&self) -> usize {
-        self.0.approximate_len()
-    }
-
-    /// This function has the same semantics of [`fjall::OptimisticTxKeyspace::fetch_update`].
-    #[must_use]
-    #[inline]
-    pub fn fetch_update<K: Into<UserKey>, F: FnMut(Option<&UserValue>) -> Option<UserValue>>(
-        &self,
-        key: K,
-        f: F,
-    ) -> Result<Option<UserValue>, fjall::Error> {
-        self.0.fetch_update(key, f)
-    }
-
-    /// This function has the same semantics of [`fjall::OptimisticTxKeyspace::update_fetch`].
-    #[must_use]
-    #[inline]
-    pub fn update_fetch<K: Into<UserKey>, F: FnMut(Option<&UserValue>) -> Option<UserValue>>(
-        &self,
-        key: K,
-        f: F,
-    ) -> Result<Option<Slice>, fjall::Error> {
-        self.0.update_fetch(key, f)
     }
 }
 

@@ -30,4 +30,8 @@ fn main() {
 
     // This wouldn't work as "a" is not a `u8`.
     // ks.insert("a", "hello").unwrap();
+
+    // You can still call all the normal "non-typed" method as usual because the fjall_typed::Keyspace deref to a fjall::Keyspace.
+    let len = ks.len().unwrap();
+    println!("len: {len}");
 }

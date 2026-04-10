@@ -2,11 +2,8 @@ use std::{
     borrow::Cow,
     convert::Infallible,
     marker::PhantomData,
-    ops::{Bound, RangeBounds},
-    path::Path,
+    ops::{Bound, Deref, RangeBounds},
 };
-
-use byteview::StrView;
 
 use crate::{
     codec::{Decode, Encode},
@@ -34,6 +31,14 @@ pub struct Keyspace<'a, Key, Value>(Cow<'a, fjall::Keyspace>, PhantomData<(Key, 
 impl<'a, Key, Value> Clone for Keyspace<'a, Key, Value> {
     fn clone(&self) -> Self {
         Self(self.0.clone(), self.1.clone())
+    }
+}
+
+impl<'a, Key, Value> Deref for Keyspace<'a, Key, Value> {
+    type Target = fjall::Keyspace;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
@@ -109,27 +114,6 @@ impl<'a, Key, Value> Keyspace<'a, Key, Value> {
         Keyspace(Cow::Borrowed(self.0.as_ref()), PhantomData)
     }
 
-    #[must_use]
-    #[inline]
-    #[doc = "This function has the same semantics as [`fjall::Keyspace::name`]."]
-    pub fn name(&self) -> &StrView {
-        self.0.name()
-    }
-
-    #[must_use]
-    #[inline]
-    #[doc = "This function has the same semantics as [`fjall::Keyspace::clear`]."]
-    pub fn clear(&self) -> Result<(), fjall::Error> {
-        self.0.clear()
-    }
-
-    #[must_use]
-    #[inline]
-    #[doc = "This function has the same semantics as [`fjall::Keyspace::fragmented_blob_bytes`]."]
-    pub fn fragmented_blob_bytes(&self) -> u64 {
-        self.0.fragmented_blob_bytes()
-    }
-
     /*
        #[inline]
        #[doc = "This function has the same semantics as [`fjall::Keyspace::start_ingestion`]."]
@@ -139,46 +123,11 @@ impl<'a, Key, Value> Keyspace<'a, Key, Value> {
     */
 
     #[must_use]
-    #[inline]
-    #[doc = "This function has the same semantics as [`fjall::Keyspace::path`]."]
-    pub fn path(&self) -> &Path {
-        self.0.path()
-    }
-
-    #[must_use]
-    #[inline]
-    #[doc = "This function has the same semantics as [`fjall::Keyspace::disk_space`]."]
-    pub fn disk_space(&self) -> u64 {
-        self.0.disk_space()
-    }
-
-    #[must_use]
     #[expect(clippy::iter_without_into_iter)]
     #[inline]
     #[doc = "This function has the same semantics as [`fjall::Keyspace::iter`]."]
     pub fn iter(&self) -> Iter<Key, Value> {
         Iter::new(self.0.iter())
-    }
-
-    #[must_use]
-    #[inline]
-    #[doc = "This function has the same semantics as [`fjall::Keyspace::approximate_len`]."]
-    pub fn approximate_len(&self) -> usize {
-        self.0.approximate_len()
-    }
-
-    #[must_use]
-    #[inline]
-    #[doc = "This function has the same semantics as [`fjall::Keyspace::len`]."]
-    pub fn len(&self) -> Result<usize, fjall::Error> {
-        self.0.len()
-    }
-
-    #[must_use]
-    #[inline]
-    #[doc = "This function has the same semantics as [`fjall::Keyspace::is_empty`]."]
-    pub fn is_empty(&self) -> Result<bool, fjall::Error> {
-        self.0.is_empty()
     }
 
     #[must_use]
@@ -193,13 +142,6 @@ impl<'a, Key, Value> Keyspace<'a, Key, Value> {
     #[doc = "This function has the same semantics as [`fjall::Keyspace::last_key_value`]."]
     pub fn last_key_value(&self) -> Option<Guard<Key, Value>> {
         self.0.last_key_value().map(Guard::new)
-    }
-
-    #[must_use]
-    #[inline]
-    #[doc = "This function has the same semantics as [`fjall::Keyspace::is_kv_separated`]."]
-    pub fn is_kv_separated(&self) -> bool {
-        self.0.is_kv_separated()
     }
 }
 
