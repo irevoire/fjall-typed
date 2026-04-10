@@ -27,3 +27,35 @@ impl<T: DeserializeOwned> Decode for SerdeJson<T> {
         serde_json::from_slice(&bytes)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use serde::{Deserialize, Serialize};
+
+    use crate::codec::{Decode, Encode, SerdeJson};
+
+    #[test]
+    fn encode_and_decode() {
+        #[derive(Serialize, Deserialize, Debug, PartialEq)]
+        struct Example {
+            name: String,
+            value: i32,
+        }
+
+        let value = Example {
+            name: "pi".to_string(),
+            value: 31415926,
+        };
+
+        let facet_bytes = serde_json::to_vec(&value).unwrap();
+        let facet_deserialized = serde_json::from_slice(&facet_bytes).unwrap();
+
+        let codec_bytes = SerdeJson::<Example>::encode(&value).unwrap();
+        assert_eq!(codec_bytes, facet_bytes);
+
+        let codec_deserialized = SerdeJson::<Example>::decode(codec_bytes).unwrap();
+
+        assert_eq!(codec_deserialized, facet_deserialized);
+        assert_eq!(codec_deserialized, value);
+    }
+}
