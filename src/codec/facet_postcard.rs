@@ -26,3 +26,35 @@ impl<T: Facet<'static>> Decode for FacetPostcard<T> {
         facet_postcard::from_slice(&bytes)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use facet::Facet;
+
+    use crate::codec::{Decode, Encode, FacetPostcard};
+
+    #[test]
+    fn encode_and_decode() {
+        #[derive(Facet, Debug, PartialEq)]
+        struct Example {
+            name: String,
+            value: i32,
+        }
+
+        let value = Example {
+            name: "pi".to_string(),
+            value: 31415926,
+        };
+
+        let facet_bytes = facet_postcard::to_vec(&value).unwrap();
+        let facet_deserialized = facet_postcard::from_slice(&facet_bytes).unwrap();
+
+        let codec_bytes = FacetPostcard::<Example>::encode(&value).unwrap();
+        assert_eq!(codec_bytes, facet_bytes);
+
+        let codec_deserialized = FacetPostcard::<Example>::decode(codec_bytes).unwrap();
+
+        assert_eq!(codec_deserialized, facet_deserialized);
+        assert_eq!(codec_deserialized, value);
+    }
+}
