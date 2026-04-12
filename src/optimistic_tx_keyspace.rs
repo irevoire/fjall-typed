@@ -2,7 +2,7 @@ use std::{borrow::Cow, convert::Infallible, marker::PhantomData, ops::Deref};
 
 use crate::{
     codec::{Decode, Encode},
-    Error, Guard,
+    Error, Guard, Keyspace,
 };
 
 /// Typed optimistic tx keyspace. See [`fjall::OptimisticTxKeyspace`] for more informations on what is a keyspace.
@@ -58,6 +58,12 @@ impl<'a, Key, Value> OptimisticTxKeyspace<'a, Key, Value> {
     #[inline]
     pub fn new(ks: fjall::OptimisticTxKeyspace) -> Self {
         Self(Cow::Owned(ks), PhantomData)
+    }
+
+    /// Return the inner [`Keyspace`].
+    pub fn as_keyspace<'b>(&'b self) -> Keyspace<'b, Key, Value> {
+        let ks = self.0.as_ref();
+        Keyspace(Cow::Borrowed(ks.as_ref()), PhantomData)
     }
 
     /// Clone the inner `Arc` to decorelate this keyspace from the one it's been derived from.

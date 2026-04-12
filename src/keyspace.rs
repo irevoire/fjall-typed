@@ -26,7 +26,10 @@ use crate::{
 /// let ks = Keyspace::<U8, Str>::new(ks);
 /// ```
 #[repr(transparent)]
-pub struct Keyspace<'a, Key, Value>(Cow<'a, fjall::Keyspace>, PhantomData<(Key, Value)>);
+pub struct Keyspace<'a, Key, Value>(
+    pub(crate) Cow<'a, fjall::Keyspace>,
+    pub(crate) PhantomData<(Key, Value)>,
+);
 
 impl<'a, Key, Value> Clone for Keyspace<'a, Key, Value> {
     fn clone(&self) -> Self {
