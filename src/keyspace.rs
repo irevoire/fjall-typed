@@ -45,6 +45,12 @@ impl<'a, Key, Value> Deref for Keyspace<'a, Key, Value> {
     }
 }
 
+impl<'a, Key, Value> AsRef<Keyspace<'a, Key, Value>> for Keyspace<'a, Key, Value> {
+    fn as_ref(&self) -> &Keyspace<'a, Key, Value> {
+        self
+    }
+}
+
 impl<'a, Key, Value> Keyspace<'a, Key, Value> {
     /// Create a typed keyspace from a fjall::Keyspace.
     /// ```no_run
