@@ -19,11 +19,13 @@ pub mod codec;
 mod error;
 mod keyspace;
 mod optimistic_tx_keyspace;
+mod optimistic_write_tx;
 
 pub use error::Error;
 use fjall::Readable;
 pub use keyspace::Keyspace;
 pub use optimistic_tx_keyspace::OptimisticTxKeyspace;
+pub use optimistic_write_tx::OptimisticWriteTx;
 
 use crate::codec::{Decode, Encode};
 
